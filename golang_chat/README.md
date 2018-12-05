@@ -6,7 +6,7 @@ dockerでの動作を想定。
 Dockerfileを用意したので、イメージを作成してコンテナ起動してあげれば動く。
 
 docker image build -t ビルド後のイメージ名 Dockerfileのディレクトリ
-docker container run --rm -d -v $PWD:/usr/myapp -p 3000:8080 イメージ名
+docker container run --rm -d -v $PWD:/usr/src/myapp -p 3000:8080 イメージ名
 
 3000でポートフォワードしているので、3000番でローカルホストを開けばいい。
 
