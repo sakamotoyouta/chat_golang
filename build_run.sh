@@ -10,11 +10,15 @@ fi
 rm ${GOPATH}/src/myapp/trace/*
 \cp ./golang_trace/* ${GOPATH}/src/myapp/trace/
 
-#バイナリ作成
-go build -o ./chat ./golang_chat
+#バイナリ作
+go build -o ./chat ./golang_chat 2> ./error_log.txt
+echo -e "\e[31m$(cat ./error_log.txt)\e[m"
+if [-e ./error_log.txt]; then
+  rm ./error_log.txt
+fi
 
 #権限付
-chmod 744 ./chat
+chmod 744 ./cha
 
 #ファイル実行
-./chat -addr=":${1:-8080}"
+./chat -addr=":${1:-8080}

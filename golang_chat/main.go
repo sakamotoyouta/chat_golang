@@ -1,14 +1,14 @@
 package main
 
 import (
-	"os"
 	"flag"
 	"log"
+	"myapp/trace"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sync"
 	"text/template"
-	"myapp/trace"
 )
 
 /* 構造体 templateHandlerの定義 */
@@ -36,6 +36,7 @@ func main() {
 	// ルーティング
 	http.Handle("/chat", MustAuth(&templateHandler{filename: "chat.html"}))
 	http.Handle("/login", &templateHandler{filename: "login.html"})
+	http.Handle("/auth/", loginHandler)
 	http.Handle("/room", r)
 
 	// チャットルームを開始します
