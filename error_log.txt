@@ -1,3 +1,0 @@
-# _/usr/src/myapp/golang_chat
-golang_chat/main.go:39: cannot use loginHandler (type func(http.ResponseWriter, *http.Request)) as type http.Handler in argument to http.Handle:
-	func(http.ResponseWriter, *http.Request) does not implement http.Handler (missing ServeHTTP method)
