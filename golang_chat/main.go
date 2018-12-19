@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/gomniauth/providers/facebook"
 	"github.com/stretchr/gomniauth/providers/github"
 	"github.com/stretchr/gomniauth/providers/google"
+	"github.com/stretchr/objx"
 )
 
 /* 構造体 templateHandlerの定義 */
@@ -28,8 +29,16 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.once.Do(func() {
 		t.templ = template.Must(template.ParseFiles(filepath.Join("./golang_chat/templates", t.filename)))
 	})
+
+	data := map[string]interface{}{
+		"Host": r.Host,
+	}
+	if authCookie, err := r.Cookie("auth"); err == nil {
+		data["UserData"] = objx.MustFromBase64(authCookie.Value)
+	}
+
 	// TODO:戻り値をチェックすべき
-	t.templ.Execute(w, r)
+	t.templ.Execute(w, data)
 }
 
 func main() {
@@ -40,7 +49,7 @@ func main() {
 	gomniauth.WithProviders(
 		facebook.New("クライアントID", "秘密の値", "http://localhost:8080/auth/callback/facebook"),
 		github.New("クライアントID", "秘密の値", "http://localhost:8080/auth/callback/github"),
-		google.New(GoogleAuth["clientId"], GoogleAuth["secretKey"], "http://localhost:8080/auth/callback/google"),
+		google.New(GoogleAuth["clientId"], GoogleAuth["secretKey"], "http://localhost:3000/auth/callback/google"),
 	)
 	r := newRoom()
 	r.tracer = trace.New(os.Stdout)
