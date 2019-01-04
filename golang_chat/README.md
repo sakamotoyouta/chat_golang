@@ -16,3 +16,6 @@ docker container run --rm -d -v $PWD:/usr/src/myapp -p 3000:8080 イメージ名
 ※ コンテナのポートをオプションにより切り替えることが可能。
 docker image build -t ビルド後のイメージ名 Dockerfileのディレクトリ --build-arg port=<value>
 ```
+
+## テスト実行方法
+docker container run --rm -it -v $PWD:/usr/src/myapp -p 3000:8080 study_chat go test ./golang_chat

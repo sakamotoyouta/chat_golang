@@ -2,15 +2,16 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"myapp/trace"
+	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/stretchr/objx"
 )
 
 type room struct {
 	// 受け取ったメッセージを全てのクライアントに転送する時に使用
-	forward chan []byte
+	forward chan *message
 	// チャットルームに参加しようとしているクライアントのためのチャネル
 	join chan *client
 	// チャットルームから体質しようとしているクライアントのためのチャネル
@@ -19,15 +20,18 @@ type room struct {
 	clients map[*client]bool
 	// tracerはチャットルーム上で行われた操作のログを受け取ります
 	tracer trace.Tracer
+	// avatarはアバターの情報を取得します
+	avatar Avatar
 }
 
-func newRoom() *room {
+func newRoom(avatar Avatar) *room {
 	return &room{
-		forward: make(chan []byte),
-		join: make(chan *client),
-		leave: make(chan *client),
+		forward: make(chan *message),
+		join:    make(chan *client),
+		leave:   make(chan *client),
 		clients: make(map[*client]bool),
-		tracer: trace.Off(),
+		tracer:  trace.Off(),
+		avatar:  avatar,
 	}
 }
 
@@ -45,13 +49,13 @@ func (r *room) run() {
 			close(client.send)
 			r.tracer.Trace("クライアントが退室しました")
 		case msg := <-r.forward:
-			r.tracer.Trace("メッセージを受信しました：", string(msg))
+			r.tracer.Trace("メッセージを受信しました：", msg.Message)
 			// 全てのクライアントにメッセージを転送
 			for client := range r.clients {
 				select {
-				case client.send <-msg:
-				// TODO:メッセージを送信
-				r.tracer.Trace(" -- クライアントに送信されました")
+				case client.send <- msg:
+					// TODO:メッセージを送信
+					r.tracer.Trace(" -- クライアントに送信されました")
 				default:
 					// 送信に失敗
 					delete(r.clients, client)
@@ -64,11 +68,13 @@ func (r *room) run() {
 }
 
 const (
-	socketBufferSize = 1024
+	socketBufferSize  = 1024
 	messageBufferSize = 256
 )
+
 // HTTP接続をアップグレード
 var upgrader = &websocket.Upgrader{ReadBufferSize: socketBufferSize, WriteBufferSize: socketBufferSize}
+
 // roomにServerHTTPメソッドを作成することでHTTPハンドラとして使用できるようにする
 func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	socket, err := upgrader.Upgrade(w, req, nil)
@@ -76,13 +82,20 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		log.Fatal("ServeHTTP:", err)
 		return
 	}
-	client := &client{
-		socket: socket,
-		send: make(chan []byte, messageBufferSize),
-		room: r,
+
+	authCookie, err := req.Cookie("auth")
+	if err != nil {
+		log.Fatal("クッキーの取得に失敗しました：", err)
+		return
 	}
-	r.join <-client
-	defer func() { r.leave <-client }()
+	client := &client{
+		socket:   socket,
+		send:     make(chan *message, messageBufferSize),
+		room:     r,
+		userData: objx.MustFromBase64(authCookie.Value),
+	}
+	r.join <- client
+	defer func() { r.leave <- client }()
 	go client.write()
 	client.read()
 }

@@ -10,7 +10,7 @@ fi
 rm ${GOPATH}/src/myapp/trace/*
 \cp ./golang_trace/* ${GOPATH}/src/myapp/trace/
 
-#バイナリ作
+#バイナリ作り
 go build -o ./chat ./golang_chat 2> ./error_log.txt
 if [ -e ./error_log.txt ]; then
   echo -e "\e[31m$(cat ./error_log.txt)\e[m"

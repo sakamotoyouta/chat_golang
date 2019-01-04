@@ -1,2 +1,4 @@
 chat
 .DS_Store
+avatars/*
+!avatars/dummy.jpg
